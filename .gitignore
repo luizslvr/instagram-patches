@@ -127,3 +127,14 @@ node_modules/
 
 # Ignore IDEA files
 .idea/
+
+# pre-flight reports from tools/build.sh
+build-reports/
+
+# patched output
+instagram-patched.apk
+*.mpp
+
+# python bytecode
+__pycache__/
+*.pyc
