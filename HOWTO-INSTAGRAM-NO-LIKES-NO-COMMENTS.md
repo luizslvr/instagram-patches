@@ -120,10 +120,37 @@ Isso está documentado no cabeçalho do `DisableLikePatch.kt`, para não virar d
    apkmirror.com ou uptodown.com. É o original, sem modificar — o Morphe recebe ele e emite o
    patcheado. Não preciso distribuir nada; só usar o seu arquivo.
 
-## 6. Como verificar os anchors antes de confiar no patch
+## 6. Verificação: já foi feita, contra o Instagram 446
 
-Os substrings de endpoint e os anchors de fingerprint foram escritos a partir de código-fonte
-publicado da comunidade, **não** verificados contra o APK alvo — porque o APK não está aqui.
+Os anchors foram escritos a partir de código-fonte publicado da comunidade. Depois foram
+**conferidos contra um APK real**, baixado via apkcombo:
+
+    com.instagram.android  446.0.0.49.77  (versionCode 385211303)  base.apk 136 MB, 21 dex
+
+Resultado (13/09/2026):
+
+| item | resultado |
+|---|---|
+| `double_tap_on_liked`, `used_double_tap` (método da curtida) | presentes |
+| `Is ad pod`, `enable_media_notes_production`, `InstagramAppShell` | presentes |
+| `/comments/`, `/comment/`, `/comment_like/`, `/like/`, `/unlike/` | presentes |
+| 11 chaves de contagem (like, comment, repost, reshare, share, play, view, save, follower, following, media) | todas presentes |
+| 3 chaves do badge (unseen_count, unread_count, pending_requests_total) | todas presentes |
+
+**Um bug real foi encontrado e corrigido por isso.** O patch de comentários bloqueava
+`/comment_likes/` (plural) — que **não existe** no dex. O literal correto é `/comment_like/`
+(singular). Sem essa verificação o patch teria compilado e silenciosamente não bloqueado nada.
+
+Dois pontos de honestidade sobre o resultado:
+
+1. Verificado na **446**, não na 439 fixada. A 439.0.0.37.89 não é mais obtível em nenhum espelho
+   gratuito (apkmirror e apkpure bloqueiam com 403; uptodown usa Cloudflare Turnstile; só restam
+   443/444/446/447). Ou seja: os anchors sobreviveram 7 versões além da fixada, o que é um bom
+   sinal, mas a 439 continua sendo o alvo declarado e não foi testada.
+2. O relatório acusa **1472** outros tokens `_count` não cobertos. A esmagadora maioria é contador
+   de telemetria/analytics (ex.: `audio_xl_audio_stuck_count`), não número exibido na tela. A lista
+   completa fica em `build-reports/candidates-uncovered.txt` para garimpar os que importam.
+
 Roda tudo de uma vez com o script de pre-flight. Ele confere Java 21, o token do GitHub Packages,
 os anchors, os endpoints e as chaves JSON — e **só compila se tudo passar**:
 

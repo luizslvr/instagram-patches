@@ -121,12 +121,16 @@ grep -E '\[(ok|MISS)\]|RESULT' "$REPORT_DIR/anchors.txt" || true
 
 # ---------------------------------------------------------------------------------------------
 # Check 2 — endpoint fragments the network patches block.
+#
+# Read from the anchors report rather than from dump_network_endpoints.sh: that script filters to
+# /api|/graphql|/feed|/media|/direct_v2 prefixed paths, and the fragments these patches block are
+# bare path segments ('/comments/', '/like/') that its filter would drop. verify_anchors.py scans
+# every dex string, so it is the correct source for this check.
 # ---------------------------------------------------------------------------------------------
 bold "2. blocked endpoint fragments"
-bash tools/dump_network_endpoints.sh "$APK" > "$REPORT_DIR/endpoints.txt" 2>&1 || true
 MISSING_ENDPOINTS=0
-for frag in '/comments/' '/comment_likes/' '/like/' '/unlike/'; do
-    if grep -qF -- "$frag" "$REPORT_DIR/endpoints.txt"; then
+for frag in '/comments/' '/comment/' '/comment_like/' '/like/' '/unlike/'; do
+    if grep -qF -- "'$frag'" "$REPORT_DIR/anchors.txt"; then
         ok "present  $frag"
     else
         MISSING_ENDPOINTS=$((MISSING_ENDPOINTS+1))
@@ -135,8 +139,10 @@ for frag in '/comments/' '/comment_likes/' '/like/' '/unlike/'; do
 done
 if [[ "$MISSING_ENDPOINTS" -gt 0 ]]; then
     FAILURES=$((FAILURES+1))
-    echo "        full listing: $REPORT_DIR/endpoints.txt"
 fi
+
+# Informational: what the media-scoped endpoint dump actually contains.
+bash tools/dump_network_endpoints.sh "$APK" > "$REPORT_DIR/endpoints.txt" 2>&1 || true
 
 # ---------------------------------------------------------------------------------------------
 # Check 3 — JSON keys the count patches rename. Same semantics: an absent key is silently a no-op.
@@ -158,9 +164,20 @@ else
 fi
 
 echo
-echo "  other *_count tokens in this APK that the patch does not cover:"
-grep -A99 'candidates the patch may not cover' "$REPORT_DIR/keys-counts.txt" \
-    | grep -vE 'candidates the patch may not cover|^--' | sed 's/^/    /' || true
+# Hundreds of *_count tokens exist in a build this size. Materialize the list first, then slice it:
+# piping a large grep straight into `head` closes the pipe early and, with `set -o pipefail`, takes
+# the whole script down with SIGPIPE (exit 141).
+CAND_FILE="$REPORT_DIR/keys-counts.txt"
+CAND_LIST="$REPORT_DIR/candidates-uncovered.txt"
+grep -A99999 'candidates the patch may not cover' "$CAND_FILE" 2>/dev/null \
+    | grep -vE 'candidates the patch may not cover|^--' \
+    | sed '/^$/d' > "$CAND_LIST" || true
+CAND_TOTAL=$(wc -l < "$CAND_LIST")
+echo "  other *_count tokens in this APK the patch does not cover: $CAND_TOTAL"
+head -12 "$CAND_LIST" | sed 's/^/    /'
+if [[ "$CAND_TOTAL" -gt 12 ]]; then
+    echo "    ... and $((CAND_TOTAL-12)) more (full list: $CAND_LIST)"
+fi
 
 # ---------------------------------------------------------------------------------------------
 # Gate

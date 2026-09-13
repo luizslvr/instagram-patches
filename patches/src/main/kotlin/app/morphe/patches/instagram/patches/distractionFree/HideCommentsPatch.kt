@@ -52,7 +52,9 @@ val hideCommentsPatch = bytecodePatch(
         blockUrl(
             "/comments/",
             "/comment/",
-            "/comment_likes/"
+            // Singular. Verified against Instagram 446.0.0.49.77: '/comment_likes/' does not exist
+            // as a literal in the dex, '/comment_like/' does.
+            "/comment_like/"
         )
     }
 }

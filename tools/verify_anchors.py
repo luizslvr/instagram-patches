@@ -38,9 +38,13 @@ REQUIRED_ANCHORS: dict[str, str] = {
 # Path fragments we expect to exist as literals in the dex string pool for the network patches.
 # Presence here does NOT prove the endpoint is still live; it only proves the literal is compiled
 # in. tools/dump_network_endpoints.sh is the stronger check for the latter.
+#
+# Verified against Instagram 446.0.0.49.77 (versionCode 385211303) on 2026-09-13. Note
+# '/comment_like/' is singular: '/comment_likes/' is NOT a literal in that build.
 EXPECTED_PATH_FRAGMENTS: dict[str, str] = {
     "/comments/": "comment list endpoint (HideCommentsPatch)",
-    "/comment_likes/": "comment like list endpoint (HideCommentsPatch)",
+    "/comment/": "comment post endpoint (HideCommentsPatch)",
+    "/comment_like/": "comment like list endpoint (HideCommentsPatch)",
     "/like/": "like endpoint (DisableLikePatch)",
     "/unlike/": "unlike endpoint (DisableLikePatch)",
 }
