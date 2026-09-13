@@ -151,6 +151,24 @@ Dois pontos de honestidade sobre o resultado:
    de telemetria/analytics (ex.: `audio_xl_audio_stuck_count`), não número exibido na tela. A lista
    completa fica em `build-reports/candidates-uncovered.txt` para garimpar os que importam.
 
+### 6.1 Alvo: 439 mantida, 446 adicionada como experimental
+
+`Constants.kt` agora declara dois alvos:
+
+- `439.0.0.37.89` — o alvo original, com o mapa de versionCode por ABI que o brosssh validou.
+- `446.0.0.49.77` — **experimental**, sem `versionCodes`. Existe porque a 439 não é mais obtível e
+  ninguém novo conseguiria sequer instalar o resultado.
+
+Marcada experimental de propósito, e a distinção importa: os quatro patches deste fork tiveram
+anchors e chaves conferidos na 446, mas os patches do upstream **não**. O Morphe falha de forma
+ruidosa quando um fingerprint não resolve, nomeando qual foi — então a própria tentativa de build é
+a verificação dos upstream.
+
+`versionCodes` foi omitido de propósito: o mapeamento ABI→versionCode da 446 não foi confirmado
+aqui, e um mapa errado rejeitaria o arquivo correto. O bundle inspecionado (versionCode 385211303)
+traz splits de densidade e **nenhum** split de ABI — pode ser que a 446 não seja dividida por ABI
+como a 439 era.
+
 Roda tudo de uma vez com o script de pre-flight. Ele confere Java 21, o token do GitHub Packages,
 os anchors, os endpoints e as chaves JSON — e **só compila se tudo passar**:
 
